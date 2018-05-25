@@ -10,7 +10,6 @@ const app = express();
 app.use(bodyParser.json());
 
 app.post('/todos', (req, res) => {
-    // console.log(req.body);
     const todo = new Todo({
         text: req.body.text
     });
@@ -21,7 +20,6 @@ app.post('/todos', (req, res) => {
 });
 
 app.get('/todos', (req, res) => {
-
     Todo.find({})
         .then((todos) => {
             res.send({
