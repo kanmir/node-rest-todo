@@ -1,15 +1,18 @@
 const {mongoose} = require('./db/mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
-const {ObjectID} =require('mongodb');
+const {ObjectID} = require('mongodb');
 
 const {Todo} = require('./models/todo');
 const {User} = require('./models/user');
+const help = require('./helpers/helpers');
 
 const app = express();
 
 const port = process.env.PORT || 3000;
 
+
+//todo: Solve problem with not JSON request
 app.use(bodyParser.json());
 
 app.post('/todos', (req, res) => {
@@ -70,6 +73,29 @@ app.delete('/todos/:id', (req, res) => {
                 error: e
             });
         });
+});
+
+app.patch('/todos/:id', (req, res) => {
+    const id = req.params.id;
+    const body = help.pick(req.body, ['text', 'completed']);
+    if (!ObjectID.isValid(id)) return res.status(404).send();
+
+    if (body.completed === true) {
+        body.completed_at = new Date().getTime();
+    }
+    else {
+        body.completed = false;
+        body.completed_at = null;
+    }
+
+
+    Todo.findByIdAndUpdate(id, {$set: body}, {new: true})
+        .then(todo => {
+            if (!todo) return res.status(404).send();
+            res.send({todo})
+        })
+        .catch(e => res.status(400).send());
+
 });
 
 app.listen(port, () => {
