@@ -81,11 +81,11 @@ app.patch('/todos/:id', (req, res) => {
     if (!ObjectID.isValid(id)) return res.status(404).send();
 
     if (body.completed === true) {
-        body.completed_at = new Date().getTime();
+        body.completedAt = new Date().getTime();
     }
     else {
         body.completed = false;
-        body.completed_at = null;
+        body.completedAt = null;
     }
 
 

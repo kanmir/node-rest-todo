@@ -13,7 +13,7 @@ const todoSchema = new Schema({
         type: Boolean,
         default: false
     },
-    completed_at: {
+    completedAt: {
         type: Number,
         default: null
     }
