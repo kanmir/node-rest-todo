@@ -1,3 +1,4 @@
+require('./config/config');
 const {mongoose} = require('./db/mongoose');
 const express = require('express');
 const bodyParser = require('body-parser');
