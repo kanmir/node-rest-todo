@@ -20,10 +20,10 @@ class JWT {
         const parts = token.split('.');
         if (parts.length === 3) {
             const verified = Hash.checkHash(`${parts[0]}.${parts[1]}`, secret, parts[2]);
-            if (!verified) return new Error('Invalid secret');
+            if (!verified) throw new Error('Invalid secret');
             return Base64Url.decode(parts[1]);
         }
-        return new Error('Invalid secret');
+        throw new Error('Invalid secret');
     }
 }
 

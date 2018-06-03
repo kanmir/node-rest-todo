@@ -40,7 +40,7 @@ const userSchema = new Schema({
     }]
 });
 
-userSchema.methods.toJSON = function() {
+userSchema.methods.toJSON = function () {
     const user = this;
     const userObject = user.toObject();
     return help.pick(userObject, ['_id', 'email']);
@@ -65,6 +65,24 @@ userSchema.methods.generateAuthToken = async function () {
         return token;
     } catch (e) {
         return e;
+    }
+};
+
+userSchema.statics.findByToken = async function (token) {
+    const User = this;
+    let decoded;
+    const user = await User.findOne(
+        {'tokens.token': token}
+    );
+    try {
+        decoded = jwt.verify(token, user.salt);
+        return User.findOne({
+            _id: JSON.parse(decoded)._id,
+            'tokens.token': token,
+            'tokens.access': 'auth'
+        });
+    } catch (e) {
+        return null;
     }
 };
 

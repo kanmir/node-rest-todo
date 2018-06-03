@@ -12,6 +12,8 @@ const port = process.env.PORT;
 //todo: Solve problem with not JSON request
 app.use(bodyParser.json());
 
+// auth middleware
+
 // Todos routes
 app.post('/todos', TodoController.createTodo);
 app.get('/todos', TodoController.getAllTodos);
@@ -21,6 +23,7 @@ app.patch('/todos/:id', TodoController.updateTodo);
 
 // Users routes
 app.post('/users', UserController.createUser);
+app.get('/users/me', UserController.authenticate, UserController.getUser);
 
 app.listen(port, () => {
     console.log(`Started on port ${port}`);
