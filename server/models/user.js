@@ -40,6 +40,15 @@ const userSchema = new Schema({
     }]
 });
 
+userSchema.pre('save', function (next) {
+    const user = this;
+    if (user.isModified('password')) {
+        user.salt = hash.genRandomString(16);
+        user.password = hash.hashData(user.password, user.salt);
+    }
+    next();
+});
+
 userSchema.methods.toJSON = function () {
     const user = this;
     const userObject = user.toObject();
@@ -49,16 +58,14 @@ userSchema.methods.toJSON = function () {
 userSchema.methods.generateAuthToken = async function () {
     const user = this;
     const access = 'auth';
-    const salt = hash.genRandomString(16);
     const token = jwt.sign(
         {
             _id: user._id.toHexString(),
             access
         },
-        salt
+        user.salt
     );
     user.tokens = user.tokens.concat([{access, token}]);
-    user.salt = salt;
 
     try {
         await user.save();
@@ -70,17 +77,16 @@ userSchema.methods.generateAuthToken = async function () {
 
 userSchema.statics.findByToken = async function (token) {
     const User = this;
-    let decoded;
     const user = await User.findOne(
-        {'tokens.token': token}
-    );
-    try {
-        decoded = jwt.verify(token, user.salt);
-        return User.findOne({
-            _id: JSON.parse(decoded)._id,
+        {
             'tokens.token': token,
             'tokens.access': 'auth'
-        });
+        }
+    );
+    try {
+        if (jwt.verify(token, user.salt)) {
+            return user;
+        } else return null;
     } catch (e) {
         return null;
     }
