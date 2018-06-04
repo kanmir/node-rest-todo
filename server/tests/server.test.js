@@ -3,29 +3,12 @@ const {ObjectID} = require('mongodb');
 
 const {app} = require('../server');
 const {Todo} = require('../models/todo');
+const {User} = require('../models/user');
+const {todos, populateTodos, users, populateUsers} = require('./seed/seed');
 
-const todos = [
-    {
-        _id: new ObjectID(),
-        text: "First test todo"
-    },
-    {
-        _id: new ObjectID(),
-        text: "Second test todo",
-        completed: true,
-        completedAt: 333
-    }
-];
+beforeEach(populateUsers);
+beforeEach(populateTodos);
 
-beforeEach(async done => {
-    try {
-        await Todo.remove({});
-        await Todo.insertMany(todos);
-        done();
-    } catch (e) {
-        done(e);
-    }
-});
 
 describe('POST /todos', () => {
     test('should create a new todo', async done => {
@@ -167,6 +150,70 @@ describe('PATCH /todos/:id', () => {
             expect(todo.completed).toBe(false);
             expect(todo.text).toBe(text);
             expect(todo.completedAt).toBeNull();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+describe('GET users/me', () => {
+    test('should return user if authenticated', async done => {
+        try {
+            const response = await request(app).get('/users/me').set('x-auth', users[0].tokens[0].token);
+            expect(response.statusCode).toBe(200);
+            expect(response.body._id).toBe(users[0]._id.toHexString());
+            expect(response.body.email).toBe(users[0].email);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    test('should return 401 if NOT authenticated', async done => {
+        try {
+            const response = await request(app).get('/users/me');
+            expect(response.statusCode).toBe(401);
+            expect(response.body).toEqual({});
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+describe('POST /users', () => {
+    test('should create a user', async done => {
+        try {
+            const email = 'example@example.com';
+            const password = '123mnb!';
+            const response = await request(app).post('/users').send({email, password});
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['x-auth']).toEqual(expect.anything());
+            expect(response.body._id).toEqual(expect.anything());
+            expect(response.body.email).toBe(email);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    test('should return validation errors if request invalid', async done => {
+        try {
+            response = await request(app).post('/users').send({email: 'and', password: '123'});
+            expect(response.statusCode).toBe(400);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    test('should not create user if email in use', async done => {
+        try {
+
+            const password = '123123';
+            const response = await request(app).post('/users').send({email: users[0].email, password});
+            expect(response.statusCode).toBe(400);
             done();
         } catch (e) {
             done(e);

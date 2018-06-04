@@ -63,7 +63,7 @@ userSchema.methods.generateAuthToken = async function () {
             _id: user._id.toHexString(),
             access
         },
-        user.salt
+        'abc123'
     );
     user.tokens = user.tokens.concat([{access, token}]);
 
@@ -84,7 +84,7 @@ userSchema.statics.findByToken = async function (token) {
         }
     );
     try {
-        if (jwt.verify(token, user.salt)) {
+        if (jwt.verify(token, 'abc123')) {
             return user;
         } else return null;
     } catch (e) {
