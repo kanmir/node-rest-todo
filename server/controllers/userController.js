@@ -1,6 +1,7 @@
 const {User} = require('../models/user');
 const {ObjectID} = require('mongodb');
 const help = require('../helpers/helpers');
+const hash = require('../helpers/Hash');
 
 class UserController {
 
@@ -30,6 +31,16 @@ class UserController {
         } catch (e) {
             res.status(401).send();
         }
+    }
+
+    static async login(req, res) {
+        const body = help.pick(req.body, ['email', 'password']);
+        const user = await User.findByCredentials(body.email, body.password);
+        if (user) {
+            const token = await user.generateAuthToken();
+            return res.header('x-auth', token).send(user);
+        }
+        return res.status(400).send();
     }
 }
 

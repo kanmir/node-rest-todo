@@ -23,6 +23,7 @@ app.patch('/todos/:id', TodoController.updateTodo);
 
 // Users routes
 app.post('/users', UserController.createUser);
+app.post('/users/login', UserController.login);
 app.get('/users/me', UserController.authenticate, UserController.getUser);
 
 app.listen(port, () => {

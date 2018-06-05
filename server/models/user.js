@@ -66,7 +66,6 @@ userSchema.methods.generateAuthToken = async function () {
         'abc123'
     );
     user.tokens = user.tokens.concat([{access, token}]);
-
     try {
         await user.save();
         return token;
@@ -87,6 +86,19 @@ userSchema.statics.findByToken = async function (token) {
         if (jwt.verify(token, 'abc123')) {
             return user;
         } else return null;
+    } catch (e) {
+        return null;
+    }
+};
+
+userSchema.statics.findByCredentials = async function (email, password) {
+    try {
+        const User = this;
+        const user = await User.findOne({email});
+        if (hash.checkHash(password, user.salt, user.password)) {
+            return user;
+        }
+        return null;
     } catch (e) {
         return null;
     }
