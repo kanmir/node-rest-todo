@@ -190,8 +190,8 @@ describe('POST /users', () => {
             const response = await request(app).post('/users').send({email, password});
             expect(response.statusCode).toBe(200);
             expect(response.headers['x-auth']).toEqual(expect.anything());
-            expect(response.body._id).toEqual(expect.anything());
-            expect(response.body.email).toBe(email);
+            expect(response.body.user._id).toEqual(expect.anything());
+            expect(response.body.user.email).toBe(email);
             done();
         } catch (e) {
             done(e);
@@ -210,10 +210,45 @@ describe('POST /users', () => {
 
     test('should not create user if email in use', async done => {
         try {
-
             const password = '123123';
             const response = await request(app).post('/users').send({email: users[0].email, password});
             expect(response.statusCode).toBe(400);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});
+
+describe('POST /users/login', () => {
+    test('should login user and return auth token', async done => {
+        try {
+            const response = await request(app).post('/users/login').send({
+                email: users[1].email,
+                password: users[1].password,
+            });
+            expect(response.statusCode).toBe(200);
+            expect(response.headers['x-auth']).toBeDefined();
+            const user = await User.findById(users[1]._id);
+            expect(user.tokens[0]).toMatchObject({
+                access: 'auth',
+                token: response.headers['x-auth']
+            });
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    test('should reject invalid login', async done => {
+        try {
+            const response = await request(app).post('/users/login').send({
+                email: users[1].email,
+                password: users[1].password + 1,
+            });
+            expect(response.statusCode).toBe(400);
+            expect(response.headers['x-auth']).toBeUndefined();
+            expect(response.body.user).toBeUndefined();
             done();
         } catch (e) {
             done(e);
