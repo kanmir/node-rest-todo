@@ -14,7 +14,9 @@ describe('POST /todos', () => {
     test('should create a new todo', async done => {
         try {
             const text = 'Test todo text';
-            const response = await request(app).post('/todos').send({text});
+            const response = await request(app).post('/todos')
+                .set('x-auth', users[0].tokens[0].token)
+                .send({text});
             expect(response.statusCode).toBe(200);
             expect(response.body.todo.text).toBe(text);
             const todos = await Todo.find({text});
@@ -27,7 +29,9 @@ describe('POST /todos', () => {
 
     test('should not create todo with invalid body data', async done => {
         try {
-            const response = await request(app).post('/todos').send({});
+            const response = await request(app).post('/todos')
+                .set('x-auth', users[0].tokens[0].token)
+                .send({});
             expect(response.statusCode).toBe(400);
             const todos = await Todo.find({});
             expect(todos.length).toBe(2);
@@ -38,13 +42,12 @@ describe('POST /todos', () => {
     });
 });
 
-
 describe('GET /todos', () => {
     test('should get all todos', async done => {
         try {
-            const response = await request(app).get('/todos');
+            const response = await request(app).get('/todos').set('x-auth', users[0].tokens[0].token);
             expect(response.statusCode).toBe(200);
-            expect(response.body.todos.length).toBe(2);
+            expect(response.body.todos.length).toBe(1);
             done();
         } catch (e) {
             done(e);
@@ -55,9 +58,19 @@ describe('GET /todos', () => {
 describe('GET /todos/:id', () => {
     test('should return doc', async done => {
         try {
-            const response = await request(app).get(`/todos/${todos[0]._id.toHexString()}`);
+            const response = await request(app).get(`/todos/${todos[0]._id.toHexString()}`).set('x-auth', users[0].tokens[0].token);
             expect(response.statusCode).toBe(200);
             expect(response.body.todo.text).toBe(todos[0].text);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
+    test('should not return doc created by other user', async done => {
+        try {
+            const response = await request(app).get(`/todos/${todos[1]._id.toHexString()}`).set('x-auth', users[0].tokens[0].token);
+            expect(response.statusCode).toBe(404);
             done();
         } catch (e) {
             done(e);
@@ -67,7 +80,7 @@ describe('GET /todos/:id', () => {
     test('should return 404 if todo not found', async done => {
         try {
             const hexId = new ObjectID().toHexString();
-            const response = await request(app).get(`/todos/${hexId}`);
+            const response = await request(app).get(`/todos/${hexId}`).set('x-auth', users[0].tokens[0].token);
             expect(response.statusCode).toBe(404);
             done();
         } catch (e) {
@@ -77,7 +90,7 @@ describe('GET /todos/:id', () => {
 
     test('should return 404 for non-object ids', async done => {
         try {
-            const response = await request(app).get(`/todos/123`);
+            const response = await request(app).get(`/todos/123`).set('x-auth', users[0].tokens[0].token);
             expect(response.statusCode).toBe(404);
             done();
         } catch (e) {
@@ -90,7 +103,7 @@ describe('DELETE /todos/:id', () => {
     test('should remove a todo', async done => {
         try {
             const hexId = todos[1]._id.toHexString();
-            const response = await request(app).delete(`/todos/${hexId}`);
+            const response = await request(app).delete(`/todos/${hexId}`).set('x-auth', users[1].tokens[0].token);
             expect(response.statusCode).toBe(200);
             expect(response.body.todo._id).toBe(hexId);
             const todo = await Todo.findById(hexId);
@@ -101,10 +114,23 @@ describe('DELETE /todos/:id', () => {
         }
     });
 
+    test('should NOT remove a todo', async done => {
+        try {
+            const hexId = todos[0]._id.toHexString();
+            const response = await request(app).delete(`/todos/${hexId}`).set('x-auth', users[1].tokens[0].token);
+            expect(response.statusCode).toBe(404);
+            const todo = await Todo.findById(hexId);
+            expect(todo).toBeDefined();
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
     test('should return 404 if todo not found', async done => {
         try {
             const hexId = new ObjectID().toHexString();
-            const response = await request(app).delete(`/todos/${hexId}`);
+            const response = await request(app).delete(`/todos/${hexId}`).set('x-auth', users[1].tokens[0].token);
             expect(response.statusCode).toBe(404);
             done();
         } catch (e) {
@@ -114,7 +140,7 @@ describe('DELETE /todos/:id', () => {
 
     test('should return 404 for invalid ObjectID', async done => {
         try {
-            const response = await request(app).delete(`/todos/123`);
+            const response = await request(app).delete(`/todos/123`).set('x-auth', users[1].tokens[0].token);
             expect(response.statusCode).toBe(404);
             done();
         } catch (e) {
@@ -128,7 +154,7 @@ describe('PATCH /todos/:id', () => {
         try {
             const hexId = todos[0]._id.toHexString();
             const text = 'Updated text';
-            const response = await request(app).patch(`/todos/${hexId}`).send({text, completed: true});
+            const response = await request(app).patch(`/todos/${hexId}`).set('x-auth', users[0].tokens[0].token).send({text, completed: true});
             const todo = response.body.todo;
             expect(response.statusCode).toBe(200);
             expect(todo.completed).toBe(true);
@@ -140,11 +166,24 @@ describe('PATCH /todos/:id', () => {
         }
     });
 
+    test('should NOT update the todo created by other user', async done => {
+        try {
+            const hexId = todos[0]._id.toHexString();
+            const text = 'Updated text';
+            const response = await request(app).patch(`/todos/${hexId}`).set('x-auth', users[1].tokens[0].token).send({text, completed: true});
+            const todo = response.body.todo;
+            expect(response.statusCode).toBe(404);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+
     test('should clear completedAt when todo is not completed', async done => {
         try {
             const hexId = todos[1]._id.toHexString();
             const text = 'Updated text2';
-            const response = await request(app).patch(`/todos/${hexId}`).send({text, completed: false});
+            const response = await request(app).patch(`/todos/${hexId}`).set('x-auth', users[1].tokens[0].token).send({text, completed: false});
             const todo = response.body.todo;
             expect(response.statusCode).toBe(200);
             expect(todo.completed).toBe(false);
@@ -230,7 +269,7 @@ describe('POST /users/login', () => {
             expect(response.statusCode).toBe(200);
             expect(response.headers['x-auth']).toBeDefined();
             const user = await User.findById(users[1]._id);
-            expect(user.tokens[0]).toMatchObject({
+            expect(user.tokens[1]).toMatchObject({
                 access: 'auth',
                 token: response.headers['x-auth']
             });

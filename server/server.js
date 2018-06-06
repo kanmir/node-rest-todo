@@ -14,11 +14,11 @@ const port = process.env.PORT;
 app.use(bodyParser.json());
 
 // Todos routes
-app.post('/todos', TodoController.createTodo);
-app.get('/todos', TodoController.getAllTodos);
-app.get('/todos/:id', TodoController.getTodo);
-app.delete('/todos/:id', TodoController.deleteTodo);
-app.patch('/todos/:id', TodoController.updateTodo);
+app.post('/todos', authenticate, TodoController.createTodo);
+app.get('/todos', authenticate, TodoController.getAllTodos);
+app.get('/todos/:id', authenticate, TodoController.getTodo);
+app.delete('/todos/:id', authenticate, TodoController.deleteTodo);
+app.patch('/todos/:id', authenticate, TodoController.updateTodo);
 
 // Users routes
 app.post('/users', UserController.createUser);
