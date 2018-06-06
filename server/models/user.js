@@ -63,7 +63,7 @@ userSchema.methods.generateAuthToken = async function () {
             _id: user._id.toHexString(),
             access
         },
-        'abc123'
+        process.env.JWT_SECRET
     );
     user.tokens = user.tokens.concat([{access, token}]);
     try {
@@ -92,7 +92,7 @@ userSchema.statics.findByToken = async function (token) {
         }
     );
     try {
-        if (jwt.verify(token, 'abc123')) {
+        if (jwt.verify(token, process.env.JWT_SECRET)) {
             return user;
         } else return null;
     } catch (e) {
