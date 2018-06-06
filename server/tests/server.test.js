@@ -162,8 +162,8 @@ describe('GET users/me', () => {
         try {
             const response = await request(app).get('/users/me').set('x-auth', users[0].tokens[0].token);
             expect(response.statusCode).toBe(200);
-            expect(response.body._id).toBe(users[0]._id.toHexString());
-            expect(response.body.email).toBe(users[0].email);
+            expect(response.body.user._id).toBe(users[0]._id.toHexString());
+            expect(response.body.user.email).toBe(users[0].email);
             done();
         } catch (e) {
             done(e);
@@ -174,7 +174,7 @@ describe('GET users/me', () => {
         try {
             const response = await request(app).get('/users/me');
             expect(response.statusCode).toBe(401);
-            expect(response.body).toEqual({});
+            expect(response.body.user).toBeUndefined();
             done();
         } catch (e) {
             done(e);
