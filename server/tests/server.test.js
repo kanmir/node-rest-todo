@@ -255,3 +255,18 @@ describe('POST /users/login', () => {
         }
     });
 });
+
+describe('DELETE /users/me/token', () => {
+    test('should remove auth token on logout', async done => {
+        try {
+            const response = await request(app).delete('/users/me/token').set('x-auth', users[0].tokens[0].token);
+            expect(response.statusCode).toBe(200);
+            expect(response.body.status).toBe('OK');
+            const user = await User.findById(users[0]._id);
+            expect(user.tokens.length).toBe(0);
+            done();
+        } catch (e) {
+            done(e);
+        }
+    });
+});

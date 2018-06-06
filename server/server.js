@@ -13,8 +13,6 @@ const port = process.env.PORT;
 //todo: Solve problem with not JSON request
 app.use(bodyParser.json());
 
-// auth middleware
-
 // Todos routes
 app.post('/todos', TodoController.createTodo);
 app.get('/todos', TodoController.getAllTodos);
