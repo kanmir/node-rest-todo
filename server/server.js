@@ -10,8 +10,15 @@ const {authenticate} = require('./middleware/authenticate');
 const app = express();
 const port = process.env.PORT;
 
-//todo: Solve problem with not JSON request
 app.use(bodyParser.json());
+
+app.use((error, req, res, next) => {
+    if (error) {
+        res.status(400).send({status: 'ERROR', message: 'Invalid request'})
+    } else {
+        next();
+    }
+});
 
 // Todos routes
 app.post('/todos', authenticate, TodoController.createTodo);
